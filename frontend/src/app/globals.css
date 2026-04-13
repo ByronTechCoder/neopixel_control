@@ -1,0 +1,366 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   CHROMACORE-90 :: RETRO TERMINAL DESIGN SYSTEM
+   Theme: Green Phosphor (dark) / Amber Phosphor (light)
+═══════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables ───────────────────────────────────────── */
+:root {
+  /* Dark mode: Classic green phosphor CRT */
+  --bg:             #040d04;
+  --bg-panel:       #091509;
+  --bg-card:        #0d1f0d;
+  --bg-card-hover:  #122412;
+  --bg-input:       #071207;
+
+  --border:         #1a3d1a;
+  --border-bright:  #2a6a2a;
+  --border-dim:     #0d200d;
+
+  --text:           #00ff41;
+  --text-dim:       #00aa2a;
+  --text-faint:     #004d15;
+  --text-inverse:   #040d04;
+
+  --accent:         #00ff41;
+  --accent-rgb:     0, 255, 65;
+  --success:        #00ff41;
+  --error:          #ff3a3a;
+  --warning:        #ffd700;
+  --info:           #00aaff;
+
+  --glow-text:      0 0 7px #00ff41, 0 0 14px rgba(0,255,65,0.6), 0 0 28px rgba(0,255,65,0.3);
+  --glow-box:       0 0 8px rgba(0,255,65,0.5), 0 0 20px rgba(0,255,65,0.25), 0 0 40px rgba(0,255,65,0.1);
+  --glow-btn:       0 0 12px rgba(0,255,65,0.7), 0 0 25px rgba(0,255,65,0.4);
+  --glow-soft:      0 0 4px rgba(0,255,65,0.3);
+
+  --scanline-color: rgba(0, 0, 0, 0.07);
+  --vignette:       radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
+
+  --font-terminal:  var(--font-vt323), "Courier New", monospace;
+  --font-data:      var(--font-share-tech), "Courier New", monospace;
+}
+
+/* Light mode: Amber phosphor terminal */
+[data-theme="light"] {
+  --bg:             #120d00;
+  --bg-panel:       #1e1600;
+  --bg-card:        #261c00;
+  --bg-card-hover:  #2e2200;
+  --bg-input:       #1a1200;
+
+  --border:         #5a4200;
+  --border-bright:  #8a6400;
+  --border-dim:     #2e2200;
+
+  --text:           #ffb800;
+  --text-dim:       #cc8800;
+  --text-faint:     #7a5000;
+  --text-inverse:   #120d00;
+
+  --accent:         #ffb800;
+  --accent-rgb:     255, 184, 0;
+  --success:        #88dd00;
+  --error:          #ff4444;
+  --warning:        #ffb800;
+  --info:           #44aaff;
+
+  --glow-text:      0 0 7px #ffb800, 0 0 14px rgba(255,184,0,0.6), 0 0 28px rgba(255,184,0,0.3);
+  --glow-box:       0 0 8px rgba(255,184,0,0.5), 0 0 20px rgba(255,184,0,0.25), 0 0 40px rgba(255,184,0,0.1);
+  --glow-btn:       0 0 12px rgba(255,184,0,0.7), 0 0 25px rgba(255,184,0,0.4);
+  --glow-soft:      0 0 4px rgba(255,184,0,0.3);
+
+  --scanline-color: rgba(0, 0, 0, 0.1);
+  --vignette:       radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
+}
+
+/* ── Base Styles ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-terminal);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  position: relative;
+  /* Subtle phosphor background texture */
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(var(--accent-rgb), 0.04) 0%, transparent 70%);
+}
+
+/* ── CRT Scanlines ───────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    var(--scanline-color) 3px,
+    var(--scanline-color) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* ── CRT Vignette ────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--vignette);
+  pointer-events: none;
+  z-index: 9997;
+}
+
+/* ── Typography ──────────────────────────────────────────── */
+.font-terminal { font-family: var(--font-terminal); }
+.font-data     { font-family: var(--font-data); }
+
+/* ── Glow Effects ────────────────────────────────────────── */
+.text-glow  { text-shadow: var(--glow-text); }
+.text-glow-soft { text-shadow: var(--glow-soft); }
+
+/* ── Panel / Card ────────────────────────────────────────── */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.panel-glow {
+  box-shadow: var(--glow-box);
+}
+
+/* Notched corner decoration */
+.notched {
+  --notch: 12px;
+  clip-path: polygon(
+    var(--notch) 0%, calc(100% - var(--notch)) 0%,
+    100% var(--notch), 100% calc(100% - var(--notch)),
+    calc(100% - var(--notch)) 100%, var(--notch) 100%,
+    0% calc(100% - var(--notch)), 0% var(--notch)
+  );
+}
+
+/* ── LED Indicators ──────────────────────────────────────── */
+.led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+
+.led::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  opacity: 0.4;
+  filter: blur(3px);
+  background: inherit;
+}
+
+.led-green  { background: #00ff41; }
+.led-amber  { background: #ffb800; }
+.led-red    { background: #ff3a3a; }
+.led-blue   { background: #00aaff; }
+.led-dim    { background: #333; }
+
+/* ── Pattern Button ──────────────────────────────────────── */
+.pattern-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.08s ease, border-color 0.08s ease, color 0.08s ease, box-shadow 0.12s ease, transform 0.06s ease;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pattern-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pattern-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-bright);
+  color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-soft), 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.pattern-btn:hover::before {
+  opacity: 1;
+}
+
+.pattern-btn:active {
+  transform: translateY(1px);
+  transition-duration: 0.04s;
+}
+
+.pattern-btn.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
+}
+
+.pattern-btn.is-pending {
+  animation: pendingPulse 0.8s ease-in-out infinite;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes ledPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55%                      { opacity: 0.92; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes scanIn {
+  from { clip-path: inset(0 0 100% 0); opacity: 0; }
+  to   { clip-path: inset(0 0 0% 0);   opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pendingPulse {
+  0%, 100% { opacity: 1; border-color: var(--accent); }
+  50%       { opacity: 0.6; border-color: var(--border); }
+}
+
+@keyframes bootTypeIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: var(--glow-soft); }
+  50%       { box-shadow: var(--glow-btn); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ── Boot Screen ─────────────────────────────────────────── */
+.boot-line {
+  animation: bootTypeIn 0.25s ease-out both;
+}
+
+/* ── Status Badge ────────────────────────────────────────── */
+.status-idle     { color: var(--text-dim); }
+.status-sending  { color: var(--warning);  animation: statusPulse 0.6s ease-in-out infinite; }
+.status-success  { color: var(--success);  text-shadow: var(--glow-text); }
+.status-error    { color: var(--error); }
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ── Input ───────────────────────────────────────────────── */
+.retro-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-data);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.retro-input:focus {
+  border-color: var(--border-bright);
+  box-shadow: var(--glow-soft);
+}
+
+.retro-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ── Modal Backdrop ──────────────────────────────────────── */
+.modal-backdrop {
+  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ── Utility ─────────────────────────────────────────────── */
+.border-terminal { border-color: var(--border); }
+.border-terminal-bright { border-color: var(--border-bright); }
+.bg-card   { background: var(--bg-card); }
+.bg-panel  { background: var(--bg-panel); }
+.text-primary  { color: var(--text); }
+.text-dim      { color: var(--text-dim); }
+.text-faint    { color: var(--text-faint); }
+.text-success  { color: var(--success); }
+.text-error    { color: var(--error); }
+.text-warning  { color: var(--warning); }
+
+/* ── Horizontal Rule ─────────────────────────────────────── */
+.hr-terminal {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* ── Toggle Switch ───────────────────────────────────────── */
+.toggle-track {
+  background: var(--bg-input);
+  border: 1px solid var(--border-bright);
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+  cursor: pointer;
+}
+
+.toggle-thumb {
+  background: var(--text-dim);
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: var(--glow-soft);
+}
+
+.toggle-track.is-active .toggle-thumb {
+  background: var(--accent);
+  box-shadow: var(--glow-btn);
+}
+
+/* ── Section Labels ──────────────────────────────────────── */
+.section-label {
+  font-family: var(--font-data);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
