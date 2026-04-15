@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit it.
+
+aio_username = "your_adafruit_username"
+aio_key      = "your_adafruit_io_key"
+aio_feed     = "neopixel-pattern"
