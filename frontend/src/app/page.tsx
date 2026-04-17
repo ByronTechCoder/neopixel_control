@@ -209,11 +209,11 @@ function PatternButton({
   return (
     <button
       onClick={onClick}
-      className={`pattern-btn notched p-0 flex flex-col items-center justify-between w-full ${
+      className={`pattern-btn pattern-btn-size notched p-0 flex flex-col items-center justify-between w-full ${
         isActive  ? 'is-active'  :
         isPending ? 'is-pending' : ''
       }`}
-      style={{ ...glowStyle, minHeight: '160px', aspectRatio: '1 / 1.1' }}
+      style={glowStyle}
       title={`Activate ${pattern.label} pattern`}
     >
       {/* Top accent bar */}
@@ -269,8 +269,9 @@ function PatternButton({
           {pattern.label}
         </div>
 
-        {/* Description */}
+        {/* Description — hidden on mobile, visible sm+ */}
         <div
+          className="hidden sm:block"
           style={{
             fontFamily: 'var(--font-data)',
             fontSize: '0.58rem',
@@ -324,6 +325,7 @@ function ThemeToggle({ isAmber, onToggle }: { isAmber: boolean; onToggle: () => 
       title={isAmber ? 'Switch to green phosphor' : 'Switch to amber phosphor'}
     >
       <span
+        className="hidden sm:inline"
         style={{
           fontFamily: 'var(--font-data)',
           fontSize: '0.65rem',
@@ -352,7 +354,7 @@ function ThemeToggle({ isAmber, onToggle }: { isAmber: boolean; onToggle: () => 
 function BootScreen({ lines, done }: { lines: string[]; done: boolean }) {
   return (
     <div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center p-8 transition-opacity duration-500"
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center p-4 sm:p-8 transition-opacity duration-500"
       style={{
         background: 'var(--bg)',
         opacity: done ? 0 : 1,
@@ -516,7 +518,7 @@ export default function Home() {
       <BootScreen lines={bootLines} done={bootDone} />
 
       <main
-        className="min-h-screen flex flex-col items-center justify-center p-4 py-8"
+        className="min-h-screen flex flex-col items-center justify-center p-4 py-4 sm:py-8"
         style={{ opacity: bootDone ? 1 : 0, transition: 'opacity 0.5s ease 0.1s' }}
       >
         <div className="w-full max-w-2xl animate-scanIn">
@@ -601,8 +603,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Hardware Info */}
-            <div>
+            {/* Hardware Info — hidden on mobile to avoid orphaned grid cell */}
+            <div className="hidden sm:block">
               <div className="section-label mb-1">HARDWARE</div>
               <div
                 style={{ fontFamily: 'var(--font-data)', fontSize: '0.75rem', color: 'var(--text-faint)', letterSpacing: '0.04em', lineHeight: 1.5 }}
@@ -633,7 +635,7 @@ export default function Home() {
             className="panel p-3"
             style={{ border: '1px solid var(--border)', borderTop: '1px solid var(--border-bright)', borderBottom: 'none' }}
           >
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PATTERNS.map((pattern) => (
                 <PatternButton
                   key={pattern.id}
@@ -651,7 +653,7 @@ export default function Home() {
             className="panel flex flex-wrap items-center justify-between gap-2 px-4 py-2"
             style={{ border: '1px solid var(--border)', borderTop: '1px solid var(--border-bright)' }}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div
                 style={{ fontFamily: 'var(--font-data)', fontSize: '0.65rem', color: 'var(--text-faint)', letterSpacing: '0.08em' }}
               >

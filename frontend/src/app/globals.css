@@ -364,3 +364,16 @@ body::after {
   color: var(--text-faint);
   text-transform: uppercase;
 }
+
+/* ── Pattern Button — Responsive Sizing ──────────────────── */
+.pattern-btn-size {
+  min-height: 130px;
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 640px) {
+  .pattern-btn-size {
+    min-height: 160px;
+    aspect-ratio: 1 / 1.1;
+  }
+}
