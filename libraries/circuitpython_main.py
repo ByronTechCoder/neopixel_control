@@ -98,6 +98,7 @@ def setup_adafruit_io():
 def get_pattern_from_adafruit_io(current):
     if not _requests or not _aio_connected:
         return current
+    response = None
     try:
         url = (
             "https://io.adafruit.com/api/v2/"
@@ -119,12 +120,16 @@ def get_pattern_from_adafruit_io(current):
                 pass
     except Exception as e:
         print("AIO get error:", e)
+    finally:
+        if response:
+            response.close()
     return current
 
 
 def send_status_to_adafruit_io(pattern_name):
     if not _requests or not _aio_connected:
         return
+    response = None
     try:
         url = (
             "https://io.adafruit.com/api/v2/"
@@ -138,11 +143,15 @@ def send_status_to_adafruit_io(pattern_name):
             print("AIO status failed:", response.status_code)
     except Exception as e:
         print("AIO send error:", e)
+    finally:
+        if response:
+            response.close()
 
 
 def initialize_feed(current_index):
     if not _requests or not _aio_connected:
         return
+    response = None
     try:
         url = (
             "https://io.adafruit.com/api/v2/"
@@ -152,10 +161,15 @@ def initialize_feed(current_index):
         if response.status_code == 200:
             data = response.json()
             if not data or not data.get("value"):
+                response.close()
+                response = None
                 send_status_to_adafruit_io(PATTERN_NAMES[current_index])
                 print("Feed initialised to:", PATTERN_NAMES[current_index])
     except Exception as e:
         print("AIO init error:", e)
+    finally:
+        if response:
+            response.close()
 
 
 # ── Main loop ───────────────────────────────────────────────────────────────
@@ -176,7 +190,7 @@ def main():
 
     current_index = 0
     last_check = 0.0
-    check_interval = 2.0   # seconds between Adafruit.IO polls
+    check_interval = 0.5   # seconds between Adafruit.IO polls
 
     while True:
         now = time.monotonic()
@@ -212,7 +226,7 @@ def main():
 
         # ── Advance current pattern one non-blocking step ───────────────────
         if current_index >= 0:
-            patterns[current_index].update(time.monotonic())
+            patterns[current_index].update(now)
 
 
 if __name__ == "__main__":

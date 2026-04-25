@@ -93,7 +93,7 @@ class NormPattern(BasePattern):
             first_pixel_hue = self._step * 256
             for i in range(self.num_pixels):
                 pixel_hue = first_pixel_hue + (i * 65536 // self.num_pixels)
-                self.pixels[i] = self.hsv_to_rgb(pixel_hue, 255, 255)
+                self.pixels[i] = self.gamma32(self.hsv_to_rgb(pixel_hue, 255, 255))
             self.pixels.show()
             self._step += 1
             self._last_update = now
@@ -111,7 +111,7 @@ class NormPattern(BasePattern):
             self.pixels.fill(_OFF)
             for c in range(b, self.num_pixels, 3):
                 hue = self._tcr_hue + c * 65536 // self.num_pixels
-                self.pixels[c] = self.hsv_to_rgb(hue, 255, 255)
+                self.pixels[c] = self.gamma32(self.hsv_to_rgb(hue, 255, 255))
             self.pixels.show()
             self._tcr_hue += 65536 // 90
             self._step += 1
