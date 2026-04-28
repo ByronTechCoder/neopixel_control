@@ -28,6 +28,8 @@ resource "azurerm_static_web_app" "main" {
     AIO_USERNAME = var.aio_username
     AIO_KEY      = var.aio_key
     AIO_FEED     = var.aio_feed
+    GITHUB_PAT   = var.github_pat
+    GITHUB_REPO  = "ByronTechCoder/neopixel_control"
   }
 }
 

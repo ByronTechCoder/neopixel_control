@@ -39,3 +39,9 @@ variable "aio_feed" {
   type        = string
   default     = "neopixel-pattern"
 }
+
+variable "github_pat" {
+  description = "GitHub fine-grained PAT with Contents read/write on this repo — used by schedule API routes"
+  type        = string
+  sensitive   = true
+}

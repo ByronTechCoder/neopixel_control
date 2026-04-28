@@ -1,0 +1,24 @@
+name: Scheduled Alert
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check and fire scheduled alerts
+        env:
+          AIO_USERNAME: ${{ secrets.AIO_USERNAME }}
+          AIO_KEY: ${{ secrets.AIO_KEY }}
+          AIO_FEED: ${{ secrets.AIO_FEED }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: node .github/scripts/fire_schedules.js

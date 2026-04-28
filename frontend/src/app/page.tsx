@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { ScheduleModal } from './components/ScheduleModal'
 
 // ── Types ──────────────────────────────────────────────────
 type PatternId = 'fall' | 'july' | 'xmas' | 'normal' | 'alert' | 'blue' | 'pink' | 'off'
@@ -418,6 +419,7 @@ export default function Home() {
   const [lastCmd, setLastCmd] = useState('--:--:--')
   const [lastPattern, setLastPattern] = useState('NONE')
   const [showSettings, setShowSettings] = useState(false)
+  const [showSchedules, setShowSchedules] = useState(false)
   const [bootLines, setBootLines] = useState<string[]>([])
   const [bootDone, setBootDone] = useState(false)
   const [settings, setSettings] = useState<Settings>({ aio_username: '', aio_key: '', aio_feed: '' })
@@ -550,6 +552,14 @@ export default function Home() {
 
             <div className="flex items-center gap-4">
               <ThemeToggle isAmber={isAmber} onToggle={() => setIsAmber((a) => !a)} />
+              <button
+                onClick={() => setShowSchedules(true)}
+                className="text-dim hover:text-primary transition-colors"
+                title="Scheduled alerts"
+                style={{ fontSize: '1.3rem', lineHeight: 1 }}
+              >
+                ⏱
+              </button>
               <button
                 onClick={() => setShowSettings(true)}
                 className="text-dim hover:text-primary transition-colors"
@@ -696,6 +706,10 @@ export default function Home() {
           onSave={saveSettings}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {showSchedules && (
+        <ScheduleModal onClose={() => setShowSchedules(false)} />
       )}
     </>
   )

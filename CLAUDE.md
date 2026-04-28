@@ -38,6 +38,30 @@ libraries/
 │   └── pink_pattern.py       # Pink/magenta solid fill
 libraries/fallpattern/        # C++ reference implementations (do not modify)
 neostrip/neostrip.ino         # C++ Arduino main (do not modify)
+
+frontend/                     # Next.js 14 web UI (deployed to Azure Static Web Apps)
+├── src/app/
+│   ├── page.tsx              # Full UI — pattern buttons, header, modals
+│   ├── globals.css           # CRT/phosphor terminal design system (CSS vars + custom classes)
+│   ├── layout.tsx            # Root layout, loads VT323 + Share Tech Mono fonts
+│   ├── components/
+│   │   └── ScheduleModal.tsx # Scheduled alert management modal
+│   └── api/
+│       ├── pattern/route.ts  # POST — proxies pattern commands to Adafruit.IO
+│       └── schedules/route.ts # GET/POST — reads/writes schedules.json via GitHub Contents API
+
+schedules.json                # Persistent schedule store (committed to repo root, read/written via GitHub API)
+
+.github/
+├── scripts/
+│   └── fire_schedules.js     # Node.js cron script: checks EST time, fires alert to AIO
+└── workflows/
+    ├── deploy.yml            # Deploys frontend to Azure SWA on push to main
+    └── schedule_alert.yml    # Runs every 5 min, fires alert if a schedule matches
+
+infra/
+├── main.tf                   # Azure Static Web App resource + app settings
+└── variables.tf              # Input variables (aio_username, aio_key, aio_feed, github_pat)
 ```
 
 ---
@@ -123,6 +147,87 @@ from config import *
 from patterns.fall_pattern import FallPattern
 # ... other patterns
 ```
+
+---
+
+## Frontend UI
+
+The frontend is a retro CRT terminal-themed Next.js 14 SPA (`CHROMACORE-90`). All components are in `frontend/src/app/page.tsx` except `ScheduleModal` which lives in `frontend/src/app/components/ScheduleModal.tsx`.
+
+**Design system rules:**
+- Fonts: VT323 (`var(--font-terminal)`) for display text, Share Tech Mono (`var(--font-data)`) for data readouts
+- Two themes: green phosphor (default) and amber phosphor — toggled via `data-theme="light"` on `<html>`
+- All custom CSS classes are in `globals.css`: `panel`, `notched`, `panel-glow`, `retro-input`, `section-label`, `toggle-track`/`toggle-thumb`, `modal-backdrop`, `animate-fadeIn`, `animate-blink`, etc.
+- Tailwind utility classes for `border-terminal`, `border-terminal-bright`, `bg-card`, `text-primary`, `text-dim`, `text-faint` are defined in `globals.css` — do not redefine them as Tailwind theme colors
+- Modal pattern: backdrop click to close, `notched panel panel-glow animate-fadeIn`, header with label + ✕ button, `[ ACTION ]` bracket-style buttons
+
+**Communication path:**
+Browser → `POST /api/pattern` → Adafruit.IO REST API → device polls every 0.5 s and switches pattern
+
+**State persistence:**
+- Active pattern: `localStorage` key `chromacore_active`
+- Theme: `localStorage` key `chromacore_theme`
+- AIO credentials override: `localStorage` key `chromacore_settings`
+
+---
+
+## Scheduled Alerts
+
+The AlertPattern can be triggered automatically on a schedule configured via the frontend.
+
+**How it works:**
+1. Schedules are stored in `schedules.json` at the repo root (read/written via GitHub Contents API)
+2. The GitHub Actions workflow `schedule_alert.yml` runs every 5 minutes (`*/5 * * * *`)
+3. `fire_schedules.js` reads the schedule list, checks the current EST time, and POSTs `alert` to Adafruit.IO if a schedule matches
+4. The device picks up the `alert` command within 0.5 s and runs `AlertPattern` until manually changed
+
+**Schedule data model** (`schedules.json`):**
+```json
+{
+  "version": 1,
+  "schedules": [
+    {
+      "id": "unique-string",
+      "label": "Morning Alert",
+      "enabled": true,
+      "time": "08:00",
+      "month": null,
+      "day": null,
+      "year": null,
+      "repeatable": true,
+      "pattern": "alert",
+      "created_at": "ISO-8601",
+      "last_fired_at": null
+    }
+  ]
+}
+```
+
+- `time`: `"HH:MM"` in 24h, **always Eastern Time (America/New_York)**. Must be a 5-minute increment (00, 05, 10, …, 55).
+- `month`/`day`/`year`: `null` means "any" (wildcard); integers match specifically
+- `repeatable: false` disables the schedule after it fires once
+- `last_fired_at`: written back by the cron script after a successful fire; used to prevent double-firing
+
+**Timing behavior:**
+- Cron runs at :00, :05, :10, … of every hour
+- The script rounds the current EST minute down to the nearest 5 to tolerate GitHub Actions runner latency
+- Guard window: 290 seconds — prevents the same schedule firing on back-to-back cron runs
+- Alert stays active until user manually selects a different pattern
+
+**Secrets required:**
+| Secret | Where | Purpose |
+|---|---|---|
+| `AIO_USERNAME` | Repo secret | Cron script fires alert to AIO |
+| `AIO_KEY` | Repo secret | Cron script authentication |
+| `AIO_FEED` | Repo secret | Feed name (`neopixel-pattern`) |
+| `GITHUB_PAT` | Repo secret + Azure SWA app setting | Frontend API routes read/write `schedules.json` via GitHub Contents API |
+| `GITHUB_REPO` | Azure SWA app setting | Hardcoded to `ByronTechCoder/neopixel_control` in `main.tf` |
+
+`GITHUB_PAT` must be a fine-grained PAT with **Contents: read+write** on this repo only.
+
+**Write-back safety:** The cron script re-fetches `schedules.json` from GitHub (not the local checkout) before writing back `last_fired_at`, so concurrent runs don't overwrite each other's changes.
+
+**Skip CI:** Commits made by the cron script and frontend saves include `[skip ci]` in the message to prevent triggering the deploy workflow.
 
 ---
 
