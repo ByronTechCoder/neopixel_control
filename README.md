@@ -1,6 +1,6 @@
 # CHROMACORE-90 — NeoPixel Control System
 
-A cloud-connected NeoPixel controller running CircuitPython on an **Adafruit ESP32-S2 Qtpy**. Patterns are selected remotely through a retro CRT-themed web UI that communicates via **Adafruit.IO**. Scheduled alerts fire automatically through a GitHub Actions cron pipeline.
+A cloud-connected NeoPixel controller running CircuitPython on an **Adafruit ESP32-S2 Qtpy**. Patterns are selected remotely through a retro CRT-themed web UI that communicates via **Adafruit.IO**. Scheduled alerts fire automatically through a **Cloudflare Worker** cron.
 
 ---
 
@@ -35,11 +35,11 @@ Scheduled Alerts (parallel path):
 ┌───────────────────────────────┐
 │  schedules.json  (repo root)  │◄──── Frontend writes via GitHub API
 └──────────┬────────────────────┘
-           │ read every 5 min
+           │ fetch every 5 min
            ▼
 ┌───────────────────────────────┐
-│  GitHub Actions cron workflow │ → POST "alert" → AIO feed → device
-│  (schedule_alert.yml)         │
+│  Cloudflare Worker  (cron)    │ → POST "alert" → AIO feed → device
+│  worker/src/index.js          │
 └───────────────────────────────┘
 ```
 
@@ -107,10 +107,15 @@ neopixel_control/
 │
 ├── .github/
 │   ├── scripts/
-│   │   └── fire_schedules.js     # Cron script: checks EST time, fires alert to AIO
+│   │   └── fire_schedules.js     # Cron script: checks EST time, fires alert to AIO (manual use)
 │   └── workflows/
 │       ├── deploy.yml            # Deploys frontend to Azure SWA on push to main
-│       └── schedule_alert.yml    # Runs every 5 min, fires alert if schedule matches
+│       └── schedule_alert.yml    # Manual dispatch only — cron replaced by Cloudflare Worker
+│
+├── worker/                       # Cloudflare Worker — scheduled alert cron
+│   ├── wrangler.toml             # Worker config and cron trigger
+│   └── src/
+│       └── index.js              # Scheduled handler logic
 │
 ├── infra/
 │   ├── main.tf                   # Azure Static Web App + app settings
@@ -205,9 +210,6 @@ terraform apply
 
 | Secret | Purpose |
 |---|---|
-| `AIO_USERNAME` | Adafruit.IO username for the cron alert script |
-| `AIO_KEY` | Adafruit.IO API key |
-| `AIO_FEED` | Feed name (default: `neopixel-pattern`) |
 | `GITHUB_PAT` | Fine-grained PAT — Contents read+write on this repo only |
 
 **Required Azure SWA app settings** (set via Terraform or the portal):
@@ -230,9 +232,10 @@ The `alert` pattern can be triggered automatically on a time-based schedule conf
 
 1. **Frontend** — open the schedule modal (clock icon), add a schedule with a time in Eastern Time (5-minute increments only)
 2. **`schedules.json`** — stored at the repo root; the frontend reads/writes it via the GitHub Contents API so no separate database is needed
-3. **GitHub Actions** — `schedule_alert.yml` runs every 5 minutes via cron
-4. **`fire_schedules.js`** — reads `schedules.json`, checks the current EST time (rounded down to the nearest 5-minute mark to tolerate runner latency), and POSTs `alert` to Adafruit.IO for any matching enabled schedule
-5. **Device** — picks up the `alert` command within 0.5 s and runs `AlertPattern` until manually changed
+3. **Cloudflare Worker** — `worker/src/index.js` runs on a `*/5 * * * *` cron with near-zero startup latency; fetches `schedules.json` from GitHub, checks the current EST time, and POSTs `alert` to Adafruit.IO for any matching enabled schedule
+4. **Device** — picks up the `alert` command within 0.5 s and runs `AlertPattern` until manually changed
+
+The GitHub Actions workflow `schedule_alert.yml` has `workflow_dispatch` only and can be used to manually test the `fire_schedules.js` script independently.
 
 ### Schedule data model
 
@@ -262,9 +265,36 @@ The `alert` pattern can be triggered automatically on a time-based schedule conf
 - `repeatable: false` — schedule disables itself after firing once
 - `last_fired_at` — written back by the cron script; a 290-second guard window prevents double-firing across consecutive cron runs
 
+### Cloudflare Worker setup
+
+```bash
+cd worker
+npx wrangler login
+npx wrangler deploy
+
+# Set secrets (prompted for each value)
+npx wrangler secret put AIO_USERNAME
+npx wrangler secret put AIO_KEY
+npx wrangler secret put GITHUB_TOKEN   # fine-grained PAT, Contents read+write
+```
+
+`AIO_FEED` and `GITHUB_REPO` are plain vars already set in `wrangler.toml`.
+
+Confirm the cron registered in the Cloudflare dashboard: **Workers & Pages → neopixel-alert-scheduler → Triggers → Cron Triggers**.
+
+### Local testing
+
+```bash
+cd worker
+# Create worker/.dev.vars with AIO_USERNAME, AIO_KEY, GITHUB_TOKEN (gitignored)
+npx wrangler dev --test-scheduled
+# In a second terminal:
+curl "http://localhost:8787/__scheduled?cron=*%2F5+*+*+*+*"
+```
+
 ### Write-back safety
 
-The cron script re-fetches `schedules.json` from GitHub immediately before writing `last_fired_at`, so concurrent workflow runs cannot overwrite each other's changes. Cron-generated commits include `[skip ci]` to prevent triggering the deploy workflow.
+The worker re-fetches `schedules.json` from GitHub immediately before writing `last_fired_at`, so concurrent cron runs cannot overwrite each other's changes. Worker-generated commits include `[skip ci]` to prevent triggering the deploy workflow.
 
 ---
 
@@ -305,10 +335,11 @@ The web interface (`CHROMACORE-90`) uses a retro CRT phosphor terminal aesthetic
 
 ### Scheduled alert not firing
 
-- Confirm `AIO_USERNAME`, `AIO_KEY`, and `AIO_FEED` secrets are set in the repo
-- Trigger the workflow manually from the Actions tab (`workflow_dispatch` is enabled) to verify it works independently of the scheduler
-- GitHub's cron scheduler can be delayed by up to ~10 minutes under load — this is normal
-- Newly added workflow schedules can take up to an hour before GitHub's scheduler picks them up
+- Confirm `AIO_USERNAME`, `AIO_KEY`, and `GITHUB_TOKEN` secrets are set on the Cloudflare Worker: `cd worker && npx wrangler secret list`
+- Verify the cron trigger registered: Cloudflare dashboard → Workers & Pages → neopixel-alert-scheduler → Triggers → Cron Triggers (must show `*/5 * * * *`); if missing, re-run `npx wrangler deploy`
+- Tail live worker logs to see errors: `cd worker && npx wrangler tail`
+- Test locally without waiting for cron: `npx wrangler dev --test-scheduled` then `curl "http://localhost:8787/__scheduled?cron=*%2F5+*+*+*+*"` (requires `worker/.dev.vars`)
+- The GitHub Actions workflow (`schedule_alert.yml`) can be triggered manually from the Actions tab for independent testing of the `fire_schedules.js` script
 
 ### Frontend not loading / API errors
 
