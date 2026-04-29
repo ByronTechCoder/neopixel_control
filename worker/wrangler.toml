@@ -1,0 +1,10 @@
+name = "neopixel-alert-scheduler"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+GITHUB_REPO = "ByronTechCoder/neopixel_control"
+AIO_FEED = "neopixel-pattern"
