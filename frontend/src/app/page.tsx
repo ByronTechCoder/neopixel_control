@@ -337,7 +337,7 @@ function ThemeToggle({ isAmber, onToggle }: { isAmber: boolean; onToggle: () => 
         {isAmber ? 'AMBER' : 'GREEN'}
       </span>
       <div
-        className={`toggle-track w-12 h-6 rounded-sm flex items-center px-1 ${isAmber ? 'is-active' : ''}`}
+        className={`hidden sm:flex toggle-track w-12 h-6 rounded-sm items-center px-1 ${isAmber ? 'is-active' : ''}`}
       >
         <div
           className="toggle-thumb w-4 h-4 rounded-sm transition-transform"
@@ -550,7 +550,7 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <ThemeToggle isAmber={isAmber} onToggle={() => setIsAmber((a) => !a)} />
               <button
                 onClick={() => setShowSchedules(true)}
