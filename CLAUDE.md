@@ -185,7 +185,7 @@ The AlertPattern can be triggered automatically on a schedule configured via the
 1. Schedules are stored in `schedules.json` at the repo root (read/written via GitHub Contents API)
 2. A **Cloudflare Worker** (`worker/src/index.js`) runs on a `*/5 * * * *` cron — starts in milliseconds with no runner provisioning latency
 3. The worker fetches `schedules.json` from GitHub, checks the current EST time, and POSTs `alert` to Adafruit.IO for any matching enabled schedule
-4. The device picks up the `alert` command within 60 s and runs `AlertPattern` until manually changed
+4. The device picks up the `alert` command within up to 60 s and runs `AlertPattern` until manually changed
 
 The GitHub Actions workflow `schedule_alert.yml` retains `workflow_dispatch` only (no cron) and can be used for manual testing via the Actions tab.
 
