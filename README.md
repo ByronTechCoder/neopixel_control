@@ -23,7 +23,7 @@ A cloud-connected NeoPixel controller running CircuitPython on an **Adafruit ESP
 ┌─────────────────────────────────────────────────────────────────┐
 │              Adafruit.IO  (feed: neopixel-pattern)              │
 └──────────────────────┬──────────────────────────────────────────┘
-                       │ HTTP poll every 0.5 s
+                       │ HTTP poll every 60 s
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │        ESP32-S2 Qtpy  (CircuitPython)                           │
@@ -233,7 +233,7 @@ The `alert` pattern can be triggered automatically on a time-based schedule conf
 1. **Frontend** — open the schedule modal (clock icon), add a schedule with a time in Eastern Time (5-minute increments only)
 2. **`schedules.json`** — stored at the repo root; the frontend reads/writes it via the GitHub Contents API so no separate database is needed
 3. **Cloudflare Worker** — `worker/src/index.js` runs on a `*/5 * * * *` cron with near-zero startup latency; fetches `schedules.json` from GitHub, checks the current EST time, and POSTs `alert` to Adafruit.IO for any matching enabled schedule
-4. **Device** — picks up the `alert` command within 0.5 s and runs `AlertPattern` until manually changed
+4. **Device** — picks up the `alert` command within 60 s and runs `AlertPattern` until manually changed
 
 The GitHub Actions workflow `schedule_alert.yml` has `workflow_dispatch` only and can be used to manually test the `fire_schedules.js` script independently.
 
@@ -317,7 +317,7 @@ The web interface (`CHROMACORE-90`) uses a retro CRT phosphor terminal aesthetic
 2. Browser  →  POST /api/pattern  { pattern: "fall" }
 3. Next.js API route  →  POST https://io.adafruit.com/api/v2/{user}/feeds/{feed}/data
 4. Adafruit.IO stores value in feed
-5. ESP32-S2 polls feed every 0.5 s  →  receives "fall"
+5. ESP32-S2 polls feed every 60 s  →  receives "fall"
 6. Device calls pattern.reset() then runs pattern.update() each main loop iteration
 7. NeoPixels display animation
 ```
@@ -360,5 +360,5 @@ The web interface (`CHROMACORE-90`) uses a retro CRT phosphor terminal aesthetic
 - **No threading or async** on CircuitPython — all animations must be non-blocking (step-based) so the main loop can check Adafruit.IO on every iteration
 - **`time.sleep()` is prohibited inside pattern `update()` methods** — use `time.monotonic()` checks instead
 - **C++ reference** — `neostrip/neostrip.ino` and `libraries/fallpattern/` are the authoritative behavior reference; do not modify them
-- **Polling interval** — 0.5 s is the minimum acceptable; do not decrease it
+- **Polling interval** — 60 s; do not decrease it (excessive API calls)
 - **Color values** — RGB tuples are matched exactly to the C++ source; do not alter without a confirmed bug
