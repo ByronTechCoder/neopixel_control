@@ -15,7 +15,7 @@ For full setup and wiring, see `libraries/ADAFRUIT_IO_SETUP.md`.
 - **No heap compaction** — fragmentation builds up over long runtimes; avoid creating/destroying objects in tight loops
 - **No native integer types** — Python ints are boxed; minimize temporary object creation inside animation loops
 - **NeoPixel driver:** Adafruit Seesaw over I2C (`busio.I2C`, `adafruit_seesaw.neopixel`), NOT the direct `neopixel` module
-- **WiFi polling blocks the main thread** — keep HTTP requests fast and infrequent (current 0.5 s interval is acceptable)
+- **WiFi polling blocks the main thread** — keep HTTP requests fast and infrequent (current 60 s interval is acceptable)
 - **`time.sleep()` is blocking** — animations must be non-blocking (step-based) so the main loop can check for pattern changes at any time
 - **No threading or async** — preemption does not exist; cooperative yielding via the main loop is the only mechanism
 
@@ -168,7 +168,7 @@ The frontend is a retro CRT terminal-themed Next.js 14 SPA (`CHROMACORE-90`). Al
 - Modal pattern: backdrop click to close, `notched panel panel-glow animate-fadeIn`, header with label + ✕ button, `[ ACTION ]` bracket-style buttons
 
 **Communication path:**
-Browser → `POST /api/pattern` → Adafruit.IO REST API → device polls every 0.5 s and switches pattern
+Browser → `POST /api/pattern` → Adafruit.IO REST API → device polls every 60 s and switches pattern
 
 **State persistence:**
 - Active pattern: `localStorage` key `chromacore_active`
@@ -185,7 +185,7 @@ The AlertPattern can be triggered automatically on a schedule configured via the
 1. Schedules are stored in `schedules.json` at the repo root (read/written via GitHub Contents API)
 2. A **Cloudflare Worker** (`worker/src/index.js`) runs on a `*/5 * * * *` cron — starts in milliseconds with no runner provisioning latency
 3. The worker fetches `schedules.json` from GitHub, checks the current EST time, and POSTs `alert` to Adafruit.IO for any matching enabled schedule
-4. The device picks up the `alert` command within 0.5 s and runs `AlertPattern` until manually changed
+4. The device picks up the `alert` command within up to 60 s and runs `AlertPattern` until manually changed
 
 The GitHub Actions workflow `schedule_alert.yml` retains `workflow_dispatch` only (no cron) and can be used for manual testing via the Actions tab.
 
@@ -252,7 +252,7 @@ The GitHub Actions workflow `schedule_alert.yml` retains `workflow_dispatch` onl
 ## Adafruit.IO Integration Rules
 
 - Feed name: `neopixel-pattern`
-- Polling interval: 0.5 s (do not decrease — it causes excessive API calls)
+- Polling interval: 60 s (set to reduce animation interruptions; do not decrease below 60 s as it increases API calls and can reintroduce pauses)
 - Accepted values: `fall`, `july`, `xmas`, `normal`, `alert`, `blue`, `pink`, `off`, or `0`–`6`
 - Both HTTP 200 and 201 are valid success codes for POST
 - On connection failure, the current pattern continues uninterrupted — never crash or halt on network errors
