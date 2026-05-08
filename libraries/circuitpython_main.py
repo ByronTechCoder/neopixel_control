@@ -190,7 +190,7 @@ def main():
 
     current_index = 0
     last_check = 0.0
-    check_interval = 0.5   # seconds between Adafruit.IO polls
+    check_interval = 60.0  # seconds between Adafruit.IO polls
 
     while True:
         now = time.monotonic()
