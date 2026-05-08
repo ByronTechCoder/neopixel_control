@@ -252,7 +252,7 @@ The GitHub Actions workflow `schedule_alert.yml` retains `workflow_dispatch` onl
 ## Adafruit.IO Integration Rules
 
 - Feed name: `neopixel-pattern`
-- Polling interval: 60 s (do not decrease — it causes excessive API calls)
+- Polling interval: 60 s (set to reduce animation interruptions; lower values increase API calls and can reintroduce pauses)
 - Accepted values: `fall`, `july`, `xmas`, `normal`, `alert`, `blue`, `pink`, `off`, or `0`–`6`
 - Both HTTP 200 and 201 are valid success codes for POST
 - On connection failure, the current pattern continues uninterrupted — never crash or halt on network errors
